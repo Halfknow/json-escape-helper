@@ -79,8 +79,8 @@ export function activate(context: ExtensionContext) {
     let doc = editor.document;
     let text = doc.getText(editor.selection) || doc.getText();
 
-    // Remove trailing and leading whitespace
-    let trimmedText = text.trim().replace(/(?:^[\n\t\r]|[\n\t\r]$)/g, "");
+    // Remove trailing and leading whitespace, normalize line endings
+    let trimmedText = text.trim().replace(/(?:^[\n\t\r]|[\n\t\r]$)/g, "").replace(/\r\n/g, "\n");
 
     // Escape JSON
     let escapedJson = jsonHelper.escape(trimmedText);

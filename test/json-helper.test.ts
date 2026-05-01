@@ -105,8 +105,14 @@ suite("Unit tests", () => {
 
     assert.equal(
       jsonHelper.escape(invalidJson),
-      invalidJson,
-      "Invalid Json should return itself"
+      '{\\"name\\": \\"andy}',
+      "Should escape any text including invalid JSON"
+    );
+
+    assert.equal(
+      jsonHelper.escape("hello"),
+      "hello",
+      "Plain text without special chars should stay the same"
     );
   });
 
