@@ -16,25 +16,26 @@ export default class {
           if (text[i] === '\\' && i + 1 < text.length) {
             result += text[i] + text[i + 1];
             i += 2;
+          } else if (text[i] === '\n') {
+            result += '\\n';
+            i++;
           } else if (text[i] === '\r') {
-            // Skip raw \r inside double-quoted strings
+            i++;
+          } else if (text[i] === '\t') {
+            result += '\\t';
             i++;
           } else {
             result += text[i];
             i++;
           }
         }
-        if (i < text.length) {
-          result += '"';
-          i++;
-        }
+        if (i < text.length) { result += '"'; i++; }
       } else if (text[i] === "'") {
         result += '"';
         i++;
         while (i < text.length && text[i] !== "'") {
           if (text[i] === '\\' && i + 1 < text.length) {
             if (text[i + 1] === "'") {
-              // \' → ' (un-escape single quote)
               result += "'";
               i += 2;
             } else {
@@ -42,21 +43,22 @@ export default class {
               i += 2;
             }
           } else if (text[i] === '"') {
-            // Escape inner double quote for JSON
             result += '\\"';
             i++;
+          } else if (text[i] === '\n') {
+            result += '\\n';
+            i++;
           } else if (text[i] === '\r') {
-            // Skip raw \r inside single-quoted strings
+            i++;
+          } else if (text[i] === '\t') {
+            result += '\\t';
             i++;
           } else {
             result += text[i];
             i++;
           }
         }
-        if (i < text.length) {
-          result += '"';
-          i++;
-        }
+        if (i < text.length) { result += '"'; i++; }
       } else {
         result += text[i];
         i++;
@@ -135,15 +137,75 @@ export default class {
   }
 
   /**
-   * isValid
-   * @param text
+   * validate - returns error message with position, or null if valid
    */
-  public isValid(text: string): boolean {
+  public validate(text: string): string | null {
+    // Try with native JSON first for better error messages
+    let nativeError: string | null = null;
     try {
-      return typeof this.parse(text) === "object";
-    } catch (err) {
-      return false;
+      const result = globalThis.JSON.parse(text);
+      if (typeof result !== "object") {
+        return "Not a JSON object or array";
+      }
+      // Valid with native parser, also validate with json-bigint for consistency
+      try {
+        this.parse(text);
+      } catch {}
+      return null;
+    } catch (err: any) {
+      nativeError = err.message || "Unknown error";
     }
+
+    // Try normalized version
+    let normalized: string;
+    try {
+      normalized = this.normalize(text);
+    } catch {
+      return nativeError;
+    }
+
+    try {
+      const result = globalThis.JSON.parse(normalized);
+      if (typeof result !== "object") {
+        return "Not a JSON object or array";
+      }
+      return null;
+    } catch (err: any) {
+      // Use native parser error on normalized text for better messages
+      let msg = err.message || nativeError;
+
+      // Extract position and map to original text context
+      const posMatch = msg.match(/position\s+(\d+)/i);
+      if (posMatch) {
+        const pos = parseInt(posMatch[1]);
+        // Show context from normalized text (closer to what user sees)
+        const lineInfo = this.getPositionInfo(normalized, pos);
+        msg = msg + `\n${lineInfo}`;
+      }
+      return msg;
+    }
+  }
+
+  /**
+   * getPositionInfo - convert character position to line:column with context
+   */
+  private getPositionInfo(text: string, pos: number): string {
+    let line = 1;
+    let col = 1;
+    let lastLineStart = 0;
+    for (let i = 0; i < pos && i < text.length; i++) {
+      if (text[i] === "\n") {
+        line++;
+        col = 1;
+        lastLineStart = i + 1;
+      } else {
+        col++;
+      }
+    }
+    const lineEnd = text.indexOf("\n", lastLineStart);
+    const lineText = text.substring(lastLineStart, lineEnd === -1 ? text.length : lineEnd);
+    const pointer = " ".repeat(col - 1) + "^";
+    return `Line ${line}, Column ${col}\n${lineText}\n${pointer}`;
   }
 
   /**

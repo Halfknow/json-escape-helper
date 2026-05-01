@@ -60,9 +60,12 @@ export function activate(context: ExtensionContext) {
     let trimmedText = text.trim().replace(/(?:^[\n\t\r]|[\n\t\r]$)/g, "");
 
     // Determine whether JSON is valid or invalid
-    jsonHelper.isValid(trimmedText)
-      ? window.showInformationMessage("Valid JSON")
-      : window.showErrorMessage("Invalid JSON");
+    let error = jsonHelper.validate(trimmedText);
+    if (error === null) {
+      window.showInformationMessage("Valid JSON");
+    } else {
+      window.showErrorMessage("Invalid JSON: " + error);
+    }
   });
 
   /**

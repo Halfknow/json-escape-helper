@@ -2,7 +2,7 @@
   "name": "json-escape-helper",
   "displayName": "json-escape-helper",
   "description": "Beautify/Uglify/Escape/Unescape JSON&STRING",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "publisher": "Halfknow",
   "engines": {
     "vscode": "^1.85.0"

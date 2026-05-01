@@ -32,24 +32,24 @@ suite("Unit tests", () => {
 
   test("Validate JSON", () => {
     assert.equal(
-      jsonHelper.isValid(validUglifiedUnescapedJson),
-      true,
-      "Valid Json should return true"
+      jsonHelper.validate(validUglifiedUnescapedJson),
+      null,
+      "Valid Json should return null"
     );
-    assert.equal(
-      jsonHelper.isValid(invalidJson),
-      false,
-      "Invalid Json should return false"
-    );
-
-    assert.equal(
-      jsonHelper.isValid(uglifiedBigNumberJSON),
-      true
+    assert.notEqual(
+      jsonHelper.validate(invalidJson),
+      null,
+      "Invalid Json should return error message"
     );
 
     assert.equal(
-      jsonHelper.isValid(beautifiedBigNumberJSON),
-      true
+      jsonHelper.validate(uglifiedBigNumberJSON),
+      null
+    );
+
+    assert.equal(
+      jsonHelper.validate(beautifiedBigNumberJSON),
+      null
     );
   });
 
